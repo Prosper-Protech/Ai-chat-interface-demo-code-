@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 <style>
 :root {
-    --accent:#6366f1;
+    --accent:#f20d70;
     --bg-dark:#0b0b10;
     --bg-light:#f5f6fa;
     --panel-dark:rgba(20,20,30,.95);
@@ -17,7 +17,7 @@
     --text-light:#111;
     --user-bubble-dark:var(--accent);
     --ai-bubble-dark:#1c1c1e;
-    --user-bubble-light:#6366f1;
+    --user-bubble-light:#f20d70;
     --ai-bubble-light:#e5e7eb;
 }
 * {
@@ -42,19 +42,19 @@ body.light{background:var(--bg-light);}
     width:60px;
     height:60px;
     border-radius:50%;
-    background:linear-gradient(135deg,#6366f1,#8b5cf6);
+    background:linear-gradient(135deg,#a00eee,#f20d70);
     display:flex;
     align-items:center;
     justify-content:center;
     cursor:pointer;
-    box-shadow:0 10px 30px rgba(99,102,241,.5);
+    box-shadow:0 10px 30px #0a010f;
     transition:transform 0.3s ease, opacity 0.3s ease;
     z-index:10001;
-    border: 2px solid rgba(255,255,255,0.2);
+    border: 5px solid rgba(255,255,255,0.2);
 }
 #aiBubble:hover{
     transform:scale(1.1);
-    box-shadow:0 15px 40px rgba(99,102,241,.7);
+    box-shadow:0 15px 40px #000000;
 }
 #aiBubble img{
     width:36px;
@@ -318,7 +318,7 @@ body.light .ai-input textarea:focus{
 }
 .ai-input button:hover{
     transform:scale(1.1);
-    box-shadow:0 5px 15px rgba(99,102,241,0.4);
+    box-shadow:0 5px 15px #f20d70;
 }
 .ai-input button:disabled{
     opacity:0.5;
@@ -333,7 +333,7 @@ body.light .ai-input textarea:focus{
 .wave{
     height:8px;
     width:8px;
-    background:#999;
+    background:#f60101;
     border-radius:50%;
     animation:wave 1s infinite alternate;
 }
@@ -398,17 +398,28 @@ body.light .ai-input textarea:focus{
         max-width:80%;
     }
 }
+/* Full line highlight */
+    .highlight-line {
+      background-color: #ffffff;
+      display: inline-block;
+      color:#000000;
+      padding: 8px 15px;
+      border-left: 4px solid #f20d70;
+      border-radius: 5px;
+      margin: 5px 0;
+      border-right: 4px solid #f20d70;
+    }
 </style>
 </head>
 <body>
 <div id="aiWidget">
  <div id="aiBubble" title="Open AI Assistant">
-    <img src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png" alt="AI Assistant" id="aiAvatar">
+    <img src="https://i.pinimg.com/1200x/2e/2e/21/2e2e2125ee53807c2d77b34773f84b5c.jpg" alt="AI Assistant" id="aiAvatar">
  </div>
  <div id="aiBox">
   <div class="ai-header">
    <h1>AI Support</h1>
-   <h3>SAMITECH CORPORATION</h3>
+   <h3><mark class="highlight-line"><b>SAMITECH CORPORATION</b></mark></h3>
    <span class="theme-toggle" id="themeToggle"><i class="fa fa-moon"></i></span>
    <span class="close" id="closeBtn"><i class="fa fa-xmark"></i></span>
   </div>
@@ -426,7 +437,7 @@ body.light .ai-input textarea:focus{
 
 <script>
 // ============================
-// AI CHAT - VERCEL FIXED VERSION
+// AI CHAT - VERCEL 
 // ============================
 
 // Debug logging
