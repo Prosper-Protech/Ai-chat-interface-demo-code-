@@ -414,7 +414,7 @@ body.light .ai-input textarea:focus{
 <body>
 <div id="aiWidget">
  <div id="aiBubble" title="Open AI Assistant">
-    <img src="https://i.pinimg.com/1200x/2e/2e/21/2e2e2125ee53807c2d77b34773f84b5c.jpg" alt="AI Assistant" id="aiAvatar">
+    <img src="https://firebasestorage.googleapis.com/v0/b/i-to-u.appspot.com/o/publicimage%2F1001358726.png?alt=media&token=92643a01-a1c5-4a3b-9015-5fc6542688fc" alt="AI Assistant" id="aiAvatar">
  </div>
  <div id="aiBox">
   <div class="ai-header">
@@ -437,7 +437,7 @@ body.light .ai-input textarea:focus{
 
 <script>
 // ============================
-// AI CHAT - VERCEL 
+// AI CHAT VERSION
 // ============================
 
 // Debug logging
@@ -889,8 +889,10 @@ function addMsg(type, text) {
     div.className = 'msg ' + type;
     
     const avatarSrc = type === 'ai' 
-        ? 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png'
-        : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
+        //ai icon verify
+        ? 'https://firebasestorage.googleapis.com/v0/b/i-to-u.appspot.com/o/publicimage%2F1001358726.png?alt=media&token=92643a01-a1c5-4a3b-9015-5fc6542688fc'
+        //user icon verify
+        : 'https://firebasestorage.googleapis.com/v0/b/i-to-u.appspot.com/o/publicimage%2F1001358781.png?alt=media&token=b9e86f33-9ed0-404f-8506-b679ff12a5a6';
     
     const time = new Date().toLocaleTimeString([], {
         hour: '2-digit',
