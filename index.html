@@ -39,18 +39,37 @@ body.light #aiBox{background:var(--panel-light);color:var(--text-light);border:1
 #messages::-webkit-scrollbar{width:6px;}
 #messages::-webkit-scrollbar-track{background:transparent;}
 #messages::-webkit-scrollbar-thumb{background:var(--accent);border-radius:3px;}
-.msg{display:flex;gap:10px;margin-bottom:12px;position:relative;animation:fadeIn 0.3s ease;}
+
+/* Message Layout */
+.msg{display:flex;margin-bottom:12px;position:relative;animation:fadeIn 0.3s ease;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
-.msg.ai .bubble{background:var(--ai-bubble-dark);color:#fff;border-radius:18px 18px 18px 6px;position:relative;}
+
+/* AI MESSAGE - LEFT SIDE */
+.msg.ai{justify-content:flex-start;}
+.msg.ai .bubble{background:var(--ai-bubble-dark);color:#fff;border-radius:18px 18px 18px 6px;margin-left:0;margin-right:auto;}
 body.light .msg.ai .bubble{background:var(--ai-bubble-light);color:#111;}
+
+/* USER MESSAGE - RIGHT SIDE */
 .msg.user{justify-content:flex-end;}
-.msg.user .bubble{background:var(--user-bubble-dark);color:#fff;border-radius:18px 18px 6px 18px;}
+.msg.user .bubble{background:var(--user-bubble-dark);color:#fff;border-radius:18px 18px 6px 18px;margin-left:auto;margin-right:0;}
 body.light .msg.user .bubble{background:var(--user-bubble-light);color:#fff;}
+
 .bubble{padding:10px 14px;max-width:75%;font-size:14px;line-height:1.4;position:relative;word-wrap:break-word;box-shadow:0 2px 5px rgba(0,0,0,0.1);}
 .avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;}
+
+/* Avatar positioning */
+.msg.ai .avatar{order:1;margin-right:10px;}
+.msg.user .avatar{order:2;margin-left:10px;}
+
+/* Message content container */
+.msg-content{display:flex;flex-direction:column;max-width:calc(100% - 46px);}
+.msg.ai .msg-content{order:2;align-items:flex-start;}
+.msg.user .msg-content{order:1;align-items:flex-end;}
+
 .msg-tools{display:flex;gap:6px;font-size:12px;opacity:.6;margin-top:4px;}
 .msg-tools span{cursor:pointer;padding:2px 6px;border-radius:4px;transition:all 0.2s ease;}
 .msg-tools span:hover{opacity:1;background:rgba(255,255,255,0.1);}
+
 .ai-input{display:flex;gap:8px;padding:10px;background:rgba(0,0,0,.2);border-top:1px solid rgba(255,255,255,0.1);}
 body.light .ai-input{background:rgba(200,200,200,.2);border-top:1px solid rgba(0,0,0,0.1);}
 .ai-input textarea{flex:1;border-radius:30px;padding:8px 12px;background:rgba(255,255,255,.1);color:inherit;resize:none;border:none;outline:none;font-size:14px;transition:all 0.2s ease;}
@@ -98,7 +117,7 @@ body.light .ai-input textarea:focus{background:rgba(255,255,255,.8);}
 
 <script>
 // ============================
-// AI CHAT - GLITCH-FREE VERSION
+// AI CHAT WITH CONVERSATION MEMORY
 // ============================
 
 let open = false;
@@ -106,8 +125,12 @@ let ws = null;
 let isProcessing = false;
 let typingEl = null;
 let currentChatId = 'chat_' + Date.now();
-let currentAIResponse = null; // Store the current AI response element
-let responseComplete = true; // Track if current response is complete
+let currentAIResponse = null;
+let responseComplete = true;
+
+// Conversation memory - stores the last 10 exchanges
+let conversationHistory = [];
+
 const box = document.getElementById('aiBox');
 const messages = document.getElementById('messages');
 const input = document.getElementById('input');
@@ -118,7 +141,12 @@ const statusText = document.getElementById('statusText');
 // Initialize with a welcome message
 window.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
-        addMsg('ai', 'Hello! I\'m your AI Support Assistant from SAMITECH CORPORATION. I provide complete, detailed responses to all your questions. How can I help you today?');
+        addMsg('ai', 'Hello! I\'m your AI Support Assistant from SAMITECH CORPORATION. I remember our conversation and can continue discussions. How can I help you today?');
+        // Add welcome message to history
+        conversationHistory.push({
+            role: 'assistant',
+            content: 'Hello! I\'m your AI Support Assistant from SAMITECH CORPORATION. I remember our conversation and can continue discussions. How can I help you today?'
+        });
     }, 500);
 });
 
@@ -159,10 +187,9 @@ function connectWebSocket() {
             console.log("✅ WebSocket connected successfully");
             updateStatus('Connected', 'connected');
             
-            // Send initial test message
             if (messages.children.length <= 1) {
                 setTimeout(() => {
-                    addMsg('ai', 'AI Support is now online and ready to provide complete responses to your questions.');
+                    addMsg('ai', 'AI Support is now online. I remember our previous conversation and can continue from where we left off.');
                 }, 300);
             }
         };
@@ -176,7 +203,6 @@ function connectWebSocket() {
             updateStatus('Disconnected', 'disconnected');
             ws = null;
             
-            // Auto-reconnect after delay if chat is open
             if (open) {
                 setTimeout(() => {
                     connectWebSocket();
@@ -192,7 +218,6 @@ function connectWebSocket() {
         console.error("❌ Failed to create WebSocket:", error);
         updateStatus('Failed to connect', 'disconnected');
         
-        // Show fallback message
         setTimeout(() => {
             if (messages.children.length <= 1) {
                 addMsg('ai', '⚠️ Using offline mode. For full AI capabilities, please check your internet connection.');
@@ -209,7 +234,266 @@ function updateStatus(text, status) {
 function handleWebSocketMessage(data) {
     console.log("📥 Raw data:", data);
     
-    // Skip empty messages
+    if (!data || data.trim() === '') return;
+    
+    if (data === '[DONE]' || data === '[END]' || data === '[COMPLETE]') {
+        console.log("✅ Response complete signal received");
+        
+        responseComplete = true;
+        isProcessing = false;
+        
+        hideTyping();
+        
+        sendBtn.disabled = false;
+        
+        messages.scrollTop = messages.scrollHeight;
+        return;
+    }
+    
+    try {
+        if (data.startsWith('{') || data.startsWith('[')) {
+            const jsonData = JSON.parse(data);
+            console.log("📦 Parsed JSON response:", jsonData);
+            
+            if (jsonData.message || jsonData.response || jsonData.choices?.[0]?.text) {
+                const fullResponse = jsonData.message || jsonData.response || jsonData.choices[0].text;
+                
+                hideTyping();
+                
+                addMsg('ai', fullResponse);
+                
+                // Add AI response to conversation history
+                conversationHistory.push({
+                    role: 'assistant',
+                    content: fullResponse
+                });
+                
+                // Keep only last 20 messages (10 exchanges) to avoid token limits
+                if (conversationHistory.length > 20) {
+                    conversationHistory = conversationHistory.slice(-20);
+                }
+                
+                responseComplete = true;
+                isProcessing = false;
+                sendBtn.disabled = false;
+                
+                return;
+            }
+        }
+    } catch (e) {
+        // Not JSON, continue as text stream
+    }
+    
+    if (responseComplete) {
+        responseComplete = false;
+        hideTyping();
+        
+        currentAIResponse = addMsg('ai', data);
+    } else {
+        if (currentAIResponse) {
+            const bubble = currentAIResponse.querySelector('.bubble');
+            const currentText = bubble.innerText || bubble.textContent;
+            bubble.innerHTML = formatText(currentText + data);
+            
+            messages.scrollTop = messages.scrollHeight;
+        }
+    }
+    
+    const trimmedData = data.trim();
+    if (trimmedData.endsWith('.') || trimmedData.endsWith('?') || trimmedData.endsWith('!') || 
+        trimmedData.endsWith('```') || trimmedData.endsWith('**')) {
+        
+        clearTimeout(window.responseCompleteTimer);
+        window.responseCompleteTimer = setTimeout(() => {
+            if (!responseComplete) {
+                console.log("⏱️ Auto-detected response completion");
+                
+                // Get the full AI response from the bubble
+                if (currentAIResponse) {
+                    const fullResponse = currentAIResponse.querySelector('.bubble').innerText || 
+                                         currentAIResponse.querySelector('.bubble').textContent;
+                    
+                    // Add AI response to conversation history
+                    conversationHistory.push({
+                        role: 'assistant',
+                        content: fullResponse
+                    });
+                    
+                    // Keep only last 20 messages
+                    if (conversationHistory.length > 20) {
+                        conversationHistory = conversationHistory.slice(-20);
+                    }
+                }
+                
+                responseComplete = true;
+                isProcessing = false;
+                hideTyping();
+                sendBtn.disabled = false;
+                
+                setTimeout(() => {
+                    messages.scrollTop = messages.scrollHeight;
+                }, 100);
+            }
+        }, 1000);
+    }
+}
+
+function sendMsg() {
+    const text = input.value.trim();
+    if (!text || isProcessing) return;
+    
+    responseComplete = true;
+    currentAIResponse = null;
+    
+    // Add user message to UI (RIGHT side)
+    addMsg('user', text);
+    input.value = '';
+    input.style.height = 'auto';
+    
+    // Add user message to conversation history
+    conversationHistory.push({
+        role: 'user',
+        content: text
+    });
+    
+    // Keep only last 20 messages (10 exchanges)
+    if (conversationHistory.length > 20) {
+        conversationHistory = conversationHistory.slice(-20);
+    }
+    
+    console.log("💾 Conversation history:", conversationHistory);
+    
+    isProcessing = true;
+    sendBtn.disabled = true;
+    
+    showTyping();
+    
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+        console.log("🔌 WebSocket not connected, connecting...");
+        connectWebSocket();
+        
+        setTimeout(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                sendMessageToAI(text);
+            } else {
+                hideTyping();
+                addMsg('ai', "I'm having trouble connecting. I remember our conversation and will continue once connected.");
+                isProcessing = false;
+                sendBtn.disabled = false;
+            }
+        }, 1000);
+    } else {
+        sendMessageToAI(text);
+    }
+}
+
+function sendMessageToAI(text) {
+    try {
+        // Build context from conversation history
+        let conversationContext = "";
+        
+        // Format the conversation history for context
+        conversationHistory.forEach((msg, index) => {
+            const role = msg.role === 'user' ? 'User' : 'Assistant';
+            conversationContext += `${role}: ${msg.content}\n\n`;
+        });
+        
+        const systemPrompt = `You are AI Support from SAMITECH CORPORATION - a professional technology solutions company.
+
+IMPORTANT CONTEXT - OUR CONVERSATION HISTORY:
+${conversationContext}
+
+IMPORTANT: You MUST remember our entire conversation above and continue from where we left off.
+If the user refers to something previously discussed, use that context to provide relevant answers.
+
+Response Guidelines:
+1. Remember ALL previous messages in this conversation
+2. If user asks follow-up questions, continue from previous discussion
+3. Reference previous points when relevant
+4. Maintain context and continuity
+5. Be thorough and comprehensive
+6. Use markdown formatting for readability
+7. End with a summary or next steps
+
+Current user message: ${text}
+
+Provide a complete, context-aware response that continues our conversation:`;
+
+        const payload = {
+            chatId: currentChatId,
+            appId: 'word-almost',
+            systemPrompt: systemPrompt,
+            message: text,
+            stream: true
+        };
+
+        console.log("📤 Sending to AI with conversation context");
+        ws.send(JSON.stringify(payload));
+
+        clearTimeout(window.responseTimeout);
+        window.responseTimeout = setTimeout(() => {
+            if (isProcessing) {
+                console.log("⏰ Response timeout - forcing completion");
+                
+                if (currentAIResponse) {
+                    const bubble = currentAIResponse.querySelector('.bubble');
+                    bubble.innerHTML = formatText((bubble.innerText || bubble.textContent) + "\n\n*[Response truncated due to timeout]*");
+                }
+                
+                hideTyping();
+                isProcessing = false;
+                responseComplete = true;
+                sendBtn.disabled = false;
+                messages.scrollTop = messages.scrollHeight;
+            }
+        }, 30000);
+
+    } catch (error) {
+        console.error("Error sending message:", error);
+        hideTyping();
+        
+        // Fallback with memory
+        const lastUserMsg = conversationHistory.filter(msg => msg.role === 'user').slice(-1)[0]?.content || text;
+        const lastAIMsg = conversationHistory.filter(msg => msg.role === 'assistant').slice(-1)[0]?.content || '';
+        
+        const fallback = `I remember we were discussing: "${lastUserMsg}"\n\nBased on our conversation history, here's my response:\n\nThis appears to be a follow-up question. For detailed, context-aware assistance, please ensure you have a stable internet connection.`;
+        
+        addMsg('ai', fallback);
+        
+        // Add to history even in fallback
+        conversationHistory.push({
+            role: 'assistant',
+            content: fallback
+        });
+        
+        isProcessing = false;
+        sendBtn.disabled = false;
+    }
+}
+
+function addMsg(type, text) {
+    const div = document.createElement('div');
+    div.className = 'msg ' + type;
+    
+    const avatarSrc = type === 'ai' 
+        ? 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png'
+        : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
+    
+    const time = new Date().toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    const formattedText = formatText(text);
+    
+    div.innerHTML = `
+        ${type === 'ai' ? `<img class="avatar" src="${avatarSrc}" alt="AI avatar">` : ''}
+        <div class="msg-content">
+            <div class="bubble">${formattedText}</div>
+            <div class="msg-tools">
+                <span onclick="copyMsg(this)" title="Copy message"><i class="fa fa-copy"></i></span>
+                <span onclick="editMsg(this)" title="Edit message"><i class="fa fa-pen"></i></span>
+                <span onclick="deleteMsg(this)" title="Delete message"><i class="fa fa-trash"/ Skip empty messages
     if (!data || data.trim() === '') return;
     
     // Check for completion signal
