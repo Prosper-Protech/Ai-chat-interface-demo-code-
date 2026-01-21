@@ -3,239 +3,475 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Support – SAMITECH Corporation</title>
+<title>AI Support – SAMITECH</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 <style>
-:root{
-  --accent:#D42426;
-  --bg-dark:#0b0b10;
-  --panel-dark:rgba(20,20,30,.95);
-  --text-dark:#fff;
-  --bg-light:#f0f0f0;
-  --panel-light:#fff;
-  --text-light:#111;
+:root {
+    --accent:#6366f1;
+    --bg-dark:#0b0b10;
+    --bg-light:#f5f6fa;
+    --panel-dark:rgba(20,20,30,.95);
+    --panel-light:#ffffff;
+    --text-dark:#fff;
+    --text-light:#111;
+    --user-bubble-dark:var(--accent);
+    --ai-bubble-dark:#1c1c1e;
+    --user-bubble-light:#6366f1;
+    --ai-bubble-light:#e5e7eb;
 }
-body{margin:0;font-family:Inter,system-ui;background:var(--bg-dark)}
-#aiWidget{position:fixed;right:24px;bottom:24px;z-index:9999}
-#aiBubble{width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 10px 30px rgba(99,102,241,.5)}
-#aiBubble img{width:42px;height:42px;border-radius:50%}
-#aiBox{width:380px;height:540px;border-radius:22px;overflow:hidden;display:none;flex-direction:column;background:var(--panel-dark);color:var(--text-dark);backdrop-filter:blur(30px);box-shadow:0 30px 80px rgba(0,0,0,.7)}
-.ai-header{position:relative;background:url('https://images.unsplash.com/photo-1518770660439-4636190af475') center/cover; background-size:cover;}
-.ai-header-overlay{background:rgba(0,0,0,.6);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;flex-direction:column;position:relative;}
-.ai-header-titles h1{color:#fff;font-weight:800;font-size:18px;margin:0}
-.ai-header-titles h3{color:#d1d5db;font-weight:400;font-size:12px;margin:2px 0 0 0}
-#closeBtn{position:absolute;top:10px;right:10px;color:#fff;cursor:pointer;font-size:14px}
-#toggleMode{position:absolute;top:10px;left:10px;color:#fff;cursor:pointer;font-size:14px}
-#messages{flex:1;overflow-y:auto;padding:16px;background:transparent}
-.msg{display:flex;gap:10px;margin-bottom:16px;position:relative}
-.msg.ai .bubble{background:#1c1c1e;color:#fff;border-radius:18px 18px 18px 6px}
-.msg.user{justify-content:flex-end}
-.msg.user .bubble{background:var(--accent);color:#fff;border-radius:18px 18px 6px 18px}
-.bubble{padding:12px 14px;max-width:75%;font-size:14px;line-height:1.4}
-.avatar{width:40px;height:40px;border-radius:50%}
-.msg-tools{display:flex;gap:6px;font-size:12px;opacity:.8;margin-top:4px;align-items:center}
-.msg-tools span{cursor:pointer;color:#ccc}
-.msg-tools span:hover{color:#fff}
-.time{font-size:10px;margin-left:4px;color:#aaa}
-.ai-input{display:flex;gap:10px;padding:14px;background:rgba(0,0,0,.2)}
-.ai-input textarea{flex:1;border-radius:30px;padding:10px 14px;background:rgba(255,255,255,.1);color:inherit;resize:none;border:none;outline:none}
-.ai-input button{width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;border:none}
-.bp-wave{display:flex;gap:4px;height:12px;align-items:center}
-.bp-wave span{display:block;width:4px;height:100%;background:var(--accent);animation:bpWave 1s infinite ease-in-out}
-.bp-wave span:nth-child(2){animation-delay:.1s;}
-.bp-wave span:nth-child(3){animation-delay:.2s;}
-.bp-wave span:nth-child(4){animation-delay:.3s;}
-@keyframes bpWave{0%,100%{height:3px;opacity:.3;}50%{height:12px;opacity:1;}}
+body{margin:0;font-family:Inter,system-ui;background:var(--bg-dark);transition:0.3s;}
+body.light{background:var(--bg-light);}
+#aiWidget{position:fixed;right:16px;bottom:16px;z-index:9999;}
+#aiBubble{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 10px 30px rgba(99,102,241,.5);transition:transform 0.3s ease;}
+#aiBubble:hover{transform:scale(1.1);}
+#aiBubble img{width:36px;height:36px;border-radius:50%;}
+#aiBox{width:90vw;max-width:400px;height:70vh;border-radius:22px;overflow:hidden;display:none;flex-direction:column;background:var(--panel-dark);color:var(--text-dark);backdrop-filter:blur(20px);box-shadow:0 20px 50px rgba(0,0,0,.7);border:1px solid rgba(255,255,255,0.1);}
+body.light #aiBox{background:var(--panel-light);color:var(--text-light);border:1px solid rgba(0,0,0,0.1);}
+.ai-header{background:url('https://images.unsplash.com/photo-1518770660439-4636190af475') center/cover;height:90px;display:flex;flex-direction:column;justify-content:center;padding:10px;position:relative;}
+.ai-header h1{color:#fff;font-size:18px;font-weight:bold;margin:0;text-shadow:0 1px 3px rgba(0,0,0,0.5);}
+.ai-header h3{color:#d1d5db;font-size:12px;font-weight:400;margin:0;text-shadow:0 1px 2px rgba(0,0,0,0.5);}
+.ai-header .close, .ai-header .theme-toggle{position:absolute;top:10px;cursor:pointer;color:#fff;background:rgba(0,0,0,0.3);border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;}
+.ai-header .close:hover, .ai-header .theme-toggle:hover{background:rgba(0,0,0,0.5);transform:scale(1.1);}
+.ai-header .close{right:10px;}
+.ai-header .theme-toggle{right:40px;}
+#messages{flex:1;overflow-y:auto;padding:12px;background:transparent;scrollbar-width:thin;scrollbar-color:var(--accent) transparent;}
+#messages::-webkit-scrollbar{width:6px;}
+#messages::-webkit-scrollbar-track{background:transparent;}
+#messages::-webkit-scrollbar-thumb{background:var(--accent);border-radius:3px;}
+.msg{display:flex;gap:10px;margin-bottom:12px;position:relative;animation:fadeIn 0.3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.msg.ai .bubble{background:var(--ai-bubble-dark);color:#fff;border-radius:18px 18px 18px 6px;position:relative;}
+body.light .msg.ai .bubble{background:var(--ai-bubble-light);color:#111;}
+.msg.user{justify-content:flex-end;}
+.msg.user .bubble{background:var(--user-bubble-dark);color:#fff;border-radius:18px 18px 6px 18px;}
+body.light .msg.user .bubble{background:var(--user-bubble-light);color:#fff;}
+.bubble{padding:10px 14px;max-width:75%;font-size:14px;line-height:1.4;position:relative;word-wrap:break-word;box-shadow:0 2px 5px rgba(0,0,0,0.1);}
+.avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;}
+.msg-tools{display:flex;gap:6px;font-size:12px;opacity:.6;margin-top:4px;}
+.msg-tools span{cursor:pointer;padding:2px 6px;border-radius:4px;transition:all 0.2s ease;}
+.msg-tools span:hover{opacity:1;background:rgba(255,255,255,0.1);}
+.ai-input{display:flex;gap:8px;padding:10px;background:rgba(0,0,0,.2);border-top:1px solid rgba(255,255,255,0.1);}
+body.light .ai-input{background:rgba(200,200,200,.2);border-top:1px solid rgba(0,0,0,0.1);}
+.ai-input textarea{flex:1;border-radius:30px;padding:8px 12px;background:rgba(255,255,255,.1);color:inherit;resize:none;border:none;outline:none;font-size:14px;transition:all 0.2s ease;}
+.ai-input textarea:focus{background:rgba(255,255,255,.15);box-shadow:0 0 0 2px rgba(99,102,241,0.3);}
+body.light .ai-input textarea{background:rgba(255,255,255,.5);}
+body.light .ai-input textarea:focus{background:rgba(255,255,255,.8);}
+.ai-input button{width:40px;height:40px;border-radius:50%;background:var(--accent);color:#fff;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s ease;}
+.ai-input button:hover{transform:scale(1.1);box-shadow:0 5px 15px rgba(99,102,241,0.4);}
+.ai-input button:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+.typing{display:flex;gap:6px;padding:6px;}
+.wave{height:8px;width:8px;background:#999;border-radius:50%;animation:wave 1s infinite alternate;}
+.wave:nth-child(2){animation-delay:.2s;}
+.wave:nth-child(3){animation-delay:.4s;}
+@keyframes wave{0%,100%{transform:scaleY(0.4);}50%{transform:scaleY(1);}}
+.status-indicator{position:absolute;bottom:10px;left:10px;display:flex;align-items:center;gap:5px;font-size:10px;opacity:0.7;}
+.status-dot{width:6px;height:6px;border-radius:50%;}
+.status-dot.connected{background:#10b981;animation:pulse 2s infinite;}
+.status-dot.connecting{background:#f59e0b;animation:pulse 1s infinite;}
+.status-dot.disconnected{background:#ef4444;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+@media(max-width:480px){#aiBox{width:95vw;height:75vh;border-radius:18px;} .bubble{max-width:80%;}}
 </style>
 </head>
 <body>
-
 <div id="aiWidget">
  <div id="aiBubble"><img src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png"></div>
  <div id="aiBox">
   <div class="ai-header">
-   <div class="ai-header-overlay">
-    <i class="fas fa-moon" id="toggleMode" title="Toggle Mode"></i>
-    <i class="fas fa-xmark" id="closeBtn" title="Close"></i>
-    <div class="ai-header-titles">
-     <h1>AI Support</h1>
-     <h3>SAMITECH Corporation</h3>
-     <div class="ai-status" id="status">Connecting...</div>
-    </div>
-   </div>
+   <h1>AI Support</h1>
+   <h3>SAMITECH CORPORATION</h3>
+   <span class="theme-toggle" onclick="toggleTheme()"><i class="fa fa-moon"></i></span>
+   <span class="close" onclick="toggleChat()"><i class="fa fa-xmark"></i></span>
   </div>
-
   <div id="messages"></div>
-
   <div class="ai-input">
    <textarea id="input" rows="1" placeholder="Ask me anything..."></textarea>
-   <button onclick="sendMsg()"><i class="fa fa-paper-plane"></i></button>
+   <button id="sendBtn" onclick="sendMsg()"><i class="fa fa-paper-plane"></i></button>
+  </div>
+  <div class="status-indicator">
+   <div id="statusDot" class="status-dot disconnected"></div>
+   <span id="statusText">Disconnected</span>
   </div>
  </div>
 </div>
 
 <script>
-let open=false, ws=null, typingEl=null, currentAI='', currentChatId='chat_'+Date.now(), isProcessing=false, darkMode=true;
+// ============================
+// AI CHAT - GLITCH-FREE VERSION
+// ============================
 
-const box=document.getElementById('aiBox');
-const messages=document.getElementById('messages');
-const input=document.getElementById('input');
-const status=document.getElementById('status');
-const aiBubble=document.getElementById('aiBubble');
-const toggleModeBtn=document.getElementById('toggleMode');
-const closeBtn=document.getElementById('closeBtn');
+let open = false;
+let ws = null;
+let isProcessing = false;
+let typingEl = null;
+let currentChatId = 'chat_' + Date.now();
+let currentAIResponse = null; // Store the current AI response element
+let responseComplete = true; // Track if current response is complete
+const box = document.getElementById('aiBox');
+const messages = document.getElementById('messages');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('sendBtn');
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
 
-// Open/Close widget
-aiBubble.onclick=()=>{open=!open;box.style.display=open?'flex':'none'; if(open) connect()}
-closeBtn.onclick=()=>{open=false;box.style.display='none'}
+// Initialize with a welcome message
+window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        addMsg('ai', 'Hello! I\'m your AI Support Assistant from SAMITECH CORPORATION. I provide complete, detailed responses to all your questions. How can I help you today?');
+    }, 500);
+});
 
-toggleModeBtn.onclick=()=>{
-  darkMode=!darkMode;
-  if(darkMode){
-    box.style.background='var(--panel-dark)';
-    box.style.color='var(--text-dark)';
-    toggleModeBtn.className='fas fa-moon';
-  } else {
-    box.style.background='var(--panel-light)';
-    box.style.color='var(--text-light)';
-    toggleModeBtn.className='fas fa-sun';
-  }
+document.getElementById('aiBubble').onclick = toggleChat;
+
+function toggleChat() {
+    open = !open;
+    box.style.display = open ? 'flex' : 'none';
+    if (open) {
+        connectWebSocket();
+        input.focus();
+    } else {
+        if (ws) {
+            ws.close();
+            ws = null;
+        }
+    }
 }
 
-// WebSocket connect
-function connect(){
- if(ws && ws.readyState===1) return;
- ws=new WebSocket('wss://backend.buildpicoapps.com/api/chatbot/chat');
- status.textContent='Connecting...';
- ws.onopen=()=>status.textContent='Online';
- ws.onmessage=e=>handleAI(e.data);
- ws.onclose=()=>setTimeout(connect,2000);
+function toggleTheme() {
+    document.body.classList.toggle('light');
+    const icon = document.querySelector('.theme-toggle i');
+    icon.className = document.body.classList.contains('light') ? 'fa fa-sun' : 'fa fa-moon';
 }
 
-// Send user message
-function sendMsg(){
- if(isProcessing) return;
- const t=input.value.trim(); if(!t) return;
- addMsg('user',t);
- input.value='';
- showTyping();
- isProcessing=true;
-
- if(!ws || ws.readyState!==1) connect();
- ws.send(JSON.stringify({
-   chatId: currentChatId,
-   appId:"word-almost",
-   systemPrompt:"You are The CEO's OS AI. Use markdown for code.",
-   message:t
- }));
+function connectWebSocket() {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        updateStatus('Connected', 'connected');
+        return;
+    }
+    
+    updateStatus('Connecting...', 'connecting');
+    
+    try {
+        ws = new WebSocket('wss://backend.buildpicoapps.com/api/chatbot/chat');
+        
+        ws.onopen = () => {
+            console.log("✅ WebSocket connected successfully");
+            updateStatus('Connected', 'connected');
+            
+            // Send initial test message
+            if (messages.children.length <= 1) {
+                setTimeout(() => {
+                    addMsg('ai', 'AI Support is now online and ready to provide complete responses to your questions.');
+                }, 300);
+            }
+        };
+        
+        ws.onmessage = (event) => {
+            handleWebSocketMessage(event.data);
+        };
+        
+        ws.onclose = (event) => {
+            console.log("🔌 WebSocket closed");
+            updateStatus('Disconnected', 'disconnected');
+            ws = null;
+            
+            // Auto-reconnect after delay if chat is open
+            if (open) {
+                setTimeout(() => {
+                    connectWebSocket();
+                }, 2000);
+            }
+        };
+        
+        ws.onerror = (error) => {
+            console.error("❌ WebSocket error:", error);
+            updateStatus('Connection Error', 'disconnected');
+        };
+    } catch (error) {
+        console.error("❌ Failed to create WebSocket:", error);
+        updateStatus('Failed to connect', 'disconnected');
+        
+        // Show fallback message
+        setTimeout(() => {
+            if (messages.children.length <= 1) {
+                addMsg('ai', '⚠️ Using offline mode. For full AI capabilities, please check your internet connection.');
+            }
+        }, 500);
+    }
 }
 
-// Add message with tools and timestamp
-function addMsg(type,text){
- const time=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
- const div=document.createElement('div');
- div.className=`msg ${type}`;
- div.innerHTML=`${type==='ai'?'<img class=avatar src=https://cdn-icons-png.flaticon.com/512/4712/4712109.png>':''}
- <div>
-  <div class=bubble>${text}</div>
-  <div class=msg-tools>
-   <span onclick=copyMsg(this)><i class="fas fa-copy"></i></span>
-   <span onclick=editMsg(this)><i class="fas fa-pen"></i></span>
-   <span onclick=deleteMsg(this)><i class="fas fa-trash"></i></span>
-   <span onclick=shareMsg(this)><i class="fas fa-share-nodes"></i></span>
-   <span class=time>${time}</span>
-  </div>
- </div>`;
- messages.appendChild(div);
- messages.scrollTop=messages.scrollHeight;
- return div;
+function updateStatus(text, status) {
+    statusText.textContent = text;
+    statusDot.className = 'status-dot ' + status;
 }
 
-// Msg tools
-function copyMsg(el){navigator.clipboard.writeText(el.closest('.msg').querySelector('.bubble').innerText)}
-function editMsg(el){const b=el.closest('.msg').querySelector('.bubble');const t=prompt('Edit message',b.innerText);if(t)b.innerText=t}
-function deleteMsg(el){el.closest('.msg').remove()}
-function shareMsg(el){alert("Share this message: "+el.closest('.msg').querySelector('.bubble').innerText)}
-
-// Typing indicator
-function showTyping(){
- typingEl=document.createElement('div');
- typingEl.className='msg ai';
- typingEl.innerHTML=`<img class=avatar src=https://cdn-icons-png.flaticon.com/512/4712/4712109.png>
- <div><div class=bubble><div class="bp-wave"><span></span><span></span><span></span><span></span></div></div></div>`;
- messages.appendChild(typingEl);
- messages.scrollTop=messages.scrollHeight;
+function handleWebSocketMessage(data) {
+    console.log("📥 Raw data:", data);
+    
+    // Skip empty messages
+    if (!data || data.trim() === '') return;
+    
+    // Check for completion signal
+    if (data === '[DONE]' || data === '[END]' || data === '[COMPLETE]') {
+        console.log("✅ Response complete signal received");
+        
+        // Mark response as complete
+        responseComplete = true;
+        isProcessing = false;
+        
+        // Remove typing indicator
+        hideTyping();
+        
+        // Re-enable send button
+        sendBtn.disabled = false;
+        
+        // Ensure scroll is at bottom
+        messages.scrollTop = messages.scrollHeight;
+        return;
+    }
+    
+    // Try to parse as JSON first
+    try {
+        if (data.startsWith('{') || data.startsWith('[')) {
+            const jsonData = JSON.parse(data);
+            console.log("📦 Parsed JSON response:", jsonData);
+            
+            if (jsonData.message || jsonData.response || jsonData.choices?.[0]?.text) {
+                const fullResponse = jsonData.message || jsonData.response || jsonData.choices[0].text;
+                
+                // Hide typing indicator
+                hideTyping();
+                
+                // Add the complete response
+                addMsg('ai', fullResponse);
+                
+                // Mark as complete
+                responseComplete = true;
+                isProcessing = false;
+                sendBtn.disabled = false;
+                
+                return;
+            }
+        }
+    } catch (e) {
+        // Not JSON, continue as text stream
+    }
+    
+    // Handle streaming text response
+    if (responseComplete) {
+        // Start new response
+        responseComplete = false;
+        hideTyping(); // Remove any existing typing indicator
+        
+        // Create new AI message
+        currentAIResponse = addMsg('ai', data);
+    } else {
+        // Append to existing response
+        if (currentAIResponse) {
+            const bubble = currentAIResponse.querySelector('.bubble');
+            const currentText = bubble.innerText || bubble.textContent;
+            bubble.innerHTML = formatText(currentText + data);
+            
+            // Auto-scroll to bottom
+            messages.scrollTop = messages.scrollHeight;
+        }
+    }
+    
+    // Auto-detect if response seems complete (based on punctuation)
+    const trimmedData = data.trim();
+    if (trimmedData.endsWith('.') || trimmedData.endsWith('?') || trimmedData.endsWith('!') || 
+        trimmedData.endsWith('```') || trimmedData.endsWith('**')) {
+        
+        // Set a timer to mark as complete (allows for more text to come)
+        clearTimeout(window.responseCompleteTimer);
+        window.responseCompleteTimer = setTimeout(() => {
+            if (!responseComplete) {
+                console.log("⏱️ Auto-detected response completion");
+                responseComplete = true;
+                isProcessing = false;
+                hideTyping();
+                sendBtn.disabled = false;
+                
+                // Ensure scroll is at bottom
+                setTimeout(() => {
+                    messages.scrollTop = messages.scrollHeight;
+                }, 100);
+            }
+        }, 1000); // Wait 1 second for more text
+    }
 }
-function hideTyping(){typingEl?.remove();typingEl=null;}
 
-// Handle AI streaming
-function handleAI(d){
- if(!typingEl) showTyping();
- currentAI+=d;
- typingEl.querySelector('.bubble').innerHTML=currentAI.replace(/```(\w+)?\n([\s\S]*?)```/g,(m,lang,code)=>{
-   return `<div class="code-container"><pre><code>${code}</code></pre></div>`;
- });
- messages.scrollTop=messages.scrollHeight;
- if(d.endsWith('[DONE]')){
-   hideTyping();
-   addMsg('ai',currentAI.replace('[DONE]',''));
-   currentAI='';
-   isProcessing=false;
+function sendMsg() {
+    const text = input.value.trim();
+    if (!text || isProcessing) return;
+    
+    // Reset state
+    responseComplete = true;
+    currentAIResponse = null;
+    
+    // Add user message
+    addMsg('user', text);
+    input.value = '';
+    input.style.height = 'auto';
+    
+    // Disable send button and set processing
+    isProcessing = true;
+    sendBtn.disabled = true;
+    
+    // Show typing indicator
+    showTyping();
+    
+    // Check WebSocket connection
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+        console.log("🔌 WebSocket not connected, connecting...");
+        connectWebSocket();
+        
+        // Wait for connection then send
+        setTimeout(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                sendMessageToAI(text);
+            } else {
+                // Connection failed - show fallback
+                hideTyping();
+                addMsg('ai', "I'm having trouble connecting. Here's what I can tell you about: \"" + text + "\"\n\nPlease try again in a moment or check your connection.");
+                isProcessing = false;
+                sendBtn.disabled = false;
+            }
+        }, 1000);
+    } else {
+        sendMessageToAI(text);
+    }
 }
 
-// Auto-expand textarea
-input.addEventListener('input',()=>{input.style.height='auto';input.style.height=(input.scrollHeight)+'px';})
-</script>
+function sendMessageToAI(text) {
+    try {
+        const systemPrompt = `You are AI Support from SAMITECH CORPORATION - a professional technology solutions company.
 
-</body>
-</html>.msg.ai .bubble{background:#fff;color:#111;border-radius:18px 18px 18px 6px;white-space:pre-wrap;word-break:break-word}
-.msg.user{justify-content:flex-end}
-.msg.user .bubble{background:var(--accent);color:#fff;border-radius:18px 18px 6px 18px;white-space:pre-wrap;word-break:break-word}
-.bubble{padding:12px 14px;max-width:75%;font-size:14px;line-height:1.4}
-.avatar{width:40px;height:40px;border-radius:50%}
+IMPORTANT: ALWAYS provide COMPLETE, DETAILED responses. Your responses should be:
+1. Thorough and comprehensive
+2. Well-structured with clear sections
+3. Include practical examples when relevant
+4. End with a summary or actionable next steps
+5. Use markdown formatting for readability
 
-.msg-tools{display:flex;gap:10px;font-size:12px;opacity:.6;margin-top:4px}
-.msg-tools span{cursor:pointer}
-.msg-tools span:hover{text-decoration:underline}
+User's question: ${text}
 
-.ai-input{display:flex;gap:10px;padding:14px;background:rgba(0,0,0,.2)}
-.ai-input textarea{flex:1;border-radius:30px;padding:10px 14px;background:rgba(255,255,255,.1);color:inherit;resize:none;border:none;outline:none}
-.ai-input button{width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;border:none}
+Provide a complete, helpful response:`;
 
-.typing{display:flex;gap:6px;padding:10px}
-.dot{width:8px;height:8px;border-radius:50%;background:#999;animation:blink 1.4s infinite}
-.dot:nth-child(2){animation-delay:.2s}
-.dot:nth-child(3){animation-delay:.4s}
-@keyframes blink{0%,100%{opacity:.3}50%{opacity:1}}
+        const payload = {
+            chatId: currentChatId,
+            appId: 'word-almost',
+            systemPrompt: systemPrompt,
+            message: text,
+            stream: true
+        };
 
-code{background:rgba(0,0,0,.1);padding:2px 4px;border-radius:4px;font-family:monospace;font-size:13px}
-ul, ol{margin-left:16px;margin-bottom:4px}
-</style>
-</head>
-<body>
+        console.log("📤 Sending to AI:", text);
+        ws.send(JSON.stringify(payload));
 
-<div id="aiWidget">
- <div id="aiBubble"><img src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png"></div>
- <div id="aiBox">
-  <div class="ai-header">
-   <div class="ai-header-overlay">
-    <div>
-     <h4>AI Support</h4>
-     <div class="ai-status" id="status">Offline</div>
-    </div>
-    <div style="display:flex;gap:10px">
-     <button onclick="toggleTheme()"><i class="fa fa-moon text-white"></i></button>
-     <button onclick="toggleChat()"><i class="fa fa-xmark text-white"></i></button>
-    </div>
-   </div>
-  </div>
+        // Set response timeout (30 seconds)
+        clearTimeout(window.responseTimeout);
+        window.responseTimeout = setTimeout(() => {
+            if (isProcessing) {
+                console.log("⏰ Response timeout - forcing completion");
+                
+                if (currentAIResponse) {
+                    const bubble = currentAIResponse.querySelector('.bubble');
+                    bubble.innerHTML = formatText((bubble.innerText || bubble.textContent) + "\n\n*[Response truncated due to timeout]*");
+                }
+                
+                hideTyping();
+                isProcessing = false;
+                responseComplete = true;
+                sendBtn.disabled = false;
+                messages.scrollTop = messages.scrollHeight;
+            }
+        }, 30000);
 
-  <div id="messages"></div>
+    } catch (error) {
+        console.error("Error sending message:", error);
+        hideTyping();
+        
+        // Fallback response based on question type
+        const fallbackResponses = {
+            'tech': `Regarding your technical question about "${text}", here's what I can tell you:\n\n**Common Solutions:**\n1. Check documentation and error logs\n2. Verify configuration settings\n3. Test in isolation to identify the issue\n4. Consult community forums for similar cases\n\n**Recommended Next Steps:**\n- Gather more specific error details\n- Review recent changes to the system\n- Consider reaching out to official support channels\n\n*Note: For complete AI assistance, please ensure you have a stable internet connection.*`,
+            'general': `I understand you're asking about "${text}". Here's a general overview:\n\nThis topic typically involves several key aspects that should be considered. Based on common best practices, I recommend:\n\n1. Starting with basic research and understanding\n2. Consulting official documentation when available\n3. Considering practical implementation steps\n4. Testing and validating any proposed solutions\n\nFor a more detailed, specific response, please try again with a stable connection to our AI service.`
+        };
+        
+        const responseType = text.toLowerCase().includes('error') || text.toLowerCase().includes('bug') || 
+                           text.toLowerCase().includes('fix') || text.toLowerCase().includes('technical') ? 'tech' : 'general';
+        
+        addMsg('ai', fallbackResponses[responseType]);
+        isProcessing = false;
+        sendBtn.disabled = false;
+    }
+}
 
-  <div class="ai-input">
-   <textarea id="input" rows="1" placeholder="Ask me anything..."></textarea>
-   <button onclick="sendMsg()"><i class="fa fa-paper-plane"></i></button>
+function addMsg(type, text) {
+    const div = document.createElement('div');
+    div.className = 'msg ' + type;
+    
+    const avatarSrc = type === 'ai' 
+        ? 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png'
+        : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
+    
+    const time = new Date().toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    // Format text with proper markdown
+    const formattedText = formatText(text);
+    
+    div.innerHTML = `
+        <img class="avatar" src="${avatarSrc}" alt="${type} avatar">
+        <div style="flex:1;">
+            <div class="bubble">${formattedText}</div>
+            <div class="msg-tools">
+                <span onclick="copyMsg(this)" title="Copy message"><i class="fa fa-copy"></i></span>
+                <span onclick="editMsg(this)" title="Edit message"><i class="fa fa-pen"></i></span>
+                <span onclick="deleteMsg(this)" title="Delete message"><i class="fa fa-trash"></i></span>
+                <span onclick="shareMsg(this)" title="Share message"><i class="fa fa-share-nodes"></i></span>
+                <span style="margin-left:5px;font-size:10px;color:#888;">${time}</span>
+            </div>
+        </div>
+    `;
+    
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+    
+    // If this is an AI response, store reference
+    if (type === 'ai') {
+        currentAIResponse = div;
+    }
+    
+    return div;
+}
+
+function formatText(text) {
+    if (!text) return '';
+    
+    // Convert to string
+    let formatted = String(text);
+    
+    // Preserve line breaks for code blocks first
+    const codeBlockRegex = /```([\s\S]*?)```/g;
+    const codeBlocks = [];
+    let match;
+    let i = 0;
+    
+    while ((match = codeBlockRegex.exec(formatted)) !== null) {
+        codeBlocks.push(match[0]);
+        formatted = formatted.replace(match[0], `__CODE_BLOCK_${i}__`);
+        i++;
+    }
+    
+    // Replace code blocks back after processing
+    formatted = formatted
+        // Headers
+        .replace(/^###\s+(.*)$/gm, '<h3 style="font-size: 1.1em; font-weight: 600; margin: 10px 0 5px;">$1</h3>')
+        .replace(/^##\s+(.*)$/gm, '<h2 style="font-size: 1.2em; font-weight: 700;="sendMsg()"><i class="fa fa-paper-plane"></i></button>
   </div>
  </div>
 </div>
