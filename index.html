@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Support – SAMITECH</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+<style>
+:root {
+    --accent:#6366f1;
+    --bg-dark:#0b0b10;
+    --bg-light:#f5f6fa;
+    --panel-dark:rgba(20,20,30,.95);
+    --panel-light:#ffffff;
+    --text-dark:#fff;
+    --text-light:#111;
+    --user-bubble-dark:var(--accent);
+    --ai-bubble-dark:#1c1c1e;
+    --user-bubble-light:#6366f1;
+    --ai-bubble-light:#e5e7eb;
+}
+* {
+    box-sizing: border-box;
+}
+body {
+    margin:0;
+    font-family:Inter,system-ui;
+    background:var(--bg-dark);
+    transition:0.3s;
+    height: 100vh;
+    overflow-x: hidden;
+}
+body.light{background:var(--bg-light);}
+#aiWidget{
+    position:fixed;
+    right:16px;
+    bottom:16px;
+    z-index:10000;
+}
+#aiBubble{
+    width:60px;
+    height:60px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#6366f1,#8b5cf6);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    box-shadow:0 10px 30px rgba(99,102,241,.5);
+    transition:transform 0.3s ease, opacity 0.3s ease;
+    z-index:10001;
+    border: 2px solid rgba(255,255,255,0.2);
+}
+#aiBubble:hover{
+    transform:scale(1.1);
+    box-shadow:0 15px 40px rgba(99,102,241,.7);
+}
+#aiBubble img{
+    width:36px;
+    height:36px;
+    border-radius:50%;
+    pointer-events: none;
+}
+#aiBox{
+    width:90vw;
+    max-width:400px;
+    height:70vh;
+    border-radius:22px;
+    overflow:hidden;
+    display:none;
+    flex-direction:column;
+    background:var(--panel-dark);
+    color:var(--text-dark);
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow:0 20px 50px rgba(0,0,0,.7);
+    border:1px solid rgba(255,255,255,0.1);
+    position:fixed;
+    right:16px;
+    bottom:80px;
+    z-index:10002;
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+#aiBox.open {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+body.light #aiBox{
+    background:var(--panel-light);
+    color:var(--text-light);
+    border:1px solid rgba(0,0,0,0.1);
+}
+.ai-header{
+    background:url('https://images.unsplash.com/photo-1518770660439-4636190af475') center/cover;
+    height:90px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding:10px;
+    position:relative;
+}
+.ai-header h1{
+    color:#fff;
+    font-size:18px;
+    font-weight:bold;
+    margin:0;
+    text-shadow:0 1px 3px rgba(0,0,0,0.5);
+}
+.ai-header h3{
+    color:#d1d5db;
+    font-size:12px;
+    font-weight:400;
+    margin:0;
+    text-shadow:0 1px 2px rgba(0,0,0,0.5);
+}
+.ai-header .close, .ai-header .theme-toggle{
+    position:absolute;
+    top:10px;
+    cursor:pointer;
+    color:#fff;
+    background:rgba(0,0,0,0.3);
+    border-radius:50%;
+    width:30px;
+    height:30px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:all 0.2s ease;
+    z-index:10003;
+}
+.ai-header .close:hover, .ai-header .theme-toggle:hover{
+    background:rgba(0,0,0,0.5);
+    transform:scale(1.1);
+}
+.ai-header .close{right:10px;}
+.ai-header .theme-toggle{right:40px;}
+#messages{
+    flex:1;
+    overflow-y:auto;
+    padding:12px;
+    background:transparent;
+    scrollbar-width:thin;
+    scrollbar-color:var(--accent) transparent;
+}
+#messages::-webkit-scrollbar{
+    width:6px;
+}
+#messages::-webkit-scrollbar-track{
+    background:transparent;
+}
+#messages::-webkit-scrollbar-thumb{
+    background:var(--accent);
+    border-radius:3px;
+}
+
+/* Message Layout */
+.msg{
+    display:flex;
+    margin-bottom:12px;
+    position:relative;
+    animation:fadeIn 0.3s ease;
+}
+@keyframes fadeIn{
+    from{
+        opacity:0;
+        transform:translateY(10px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+/* AI MESSAGE - LEFT SIDE */
+.msg.ai{
+    justify-content:flex-start;
+}
+.msg.ai .bubble{
+    background:var(--ai-bubble-dark);
+    color:#fff;
+    border-radius:18px 18px 18px 6px;
+    margin-left:0;
+    margin-right:auto;
+}
+body.light .msg.ai .bubble{
+    background:var(--ai-bubble-light);
+    color:#111;
+}
+
+/* USER MESSAGE - RIGHT SIDE */
+.msg.user{
+    justify-content:flex-end;
+}
+.msg.user .bubble{
+    background:var(--user-bubble-dark);
+    color:#fff;
+    border-radius:18px 18px 6px 18px;
+    margin-left:auto;
+    margin-right:0;
+}
+body.light .msg.user .bubble{
+    background:var(--user-bubble-light);
+    color:#fff;
+}
+
+.bubble{
+    padding:10px 14px;
+    max-width:75%;
+    font-size:14px;
+    line-height:1.4;
+    position:relative;
+    word-wrap:break-word;
+    box-shadow:0 2px 5px rgba(0,0,0,0.1);
+}
+.avatar{
+    width:36px;
+    height:36px;
+    border-radius:50%;
+    object-fit:cover;
+}
+
+/* Avatar positioning */
+.msg.ai .avatar{
+    order:1;
+    margin-right:10px;
+}
+.msg.user .avatar{
+    order:2;
+    margin-left:10px;
+}
+
+/* Message content container */
+.msg-content{
+    display:flex;
+    flex-direction:column;
+    max-width:calc(100% - 46px);
+}
+.msg.ai .msg-content{
+    order:2;
+    align-items:flex-start;
+}
+.msg.user .msg-content{
+    order:1;
+    align-items:flex-end;
+}
+
+.msg-tools{
+    display:flex;
+    gap:6px;
+    font-size:12px;
+    opacity:.6;
+    margin-top:4px;
+}
+.msg-tools span{
+    cursor:pointer;
+    padding:2px 6px;
+    border-radius:4px;
+    transition:all 0.2s ease;
+}
+.msg-tools span:hover{
+    opacity:1;
+    background:rgba(255,255,255,0.1);
+}
+
+.ai-input{
+    display:flex;
+    gap:8px;
+    padding:10px;
+    background:rgba(0,0,0,.2);
+    border-top:1px solid rgba(255,255,255,0.1);
+}
+body.light .ai-input{
+    background:rgba(200,200,200,.2);
+    border-top:1px solid rgba(0,0,0,0.1);
+}
+.ai-input textarea{
+    flex:1;
+    border-radius:30px;
+    padding:8px 12px;
+    background:rgba(255,255,255,.1);
+    color:inherit;
+    resize:none;
+    border:none;
+    outline:none;
+    font-size:14px;
+    transition:all 0.2s ease;
+    font-family: inherit;
+    min-height: 40px;
+    max-height: 120px;
+}
+.ai-input textarea:focus{
+    background:rgba(255,255,255,.15);
+    box-shadow:0 0 0 2px rgba(99,102,241,0.3);
+}
+body.light .ai-input textarea{
+    background:rgba(255,255,255,.5);
+}
+body.light .ai-input textarea:focus{
+    background:rgba(255,255,255,.8);
+}
+.ai-input button{
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    transition:all 0.2s ease;
+    flex-shrink: 0;
+}
+.ai-input button:hover{
+    transform:scale(1.1);
+    box-shadow:0 5px 15px rgba(99,102,241,0.4);
+}
+.ai-input button:disabled{
+    opacity:0.5;
+    cursor:not-allowed;
+    transform:none;
+}
+.typing{
+    display:flex;
+    gap:6px;
+    padding:6px;
+}
+.wave{
+    height:8px;
+    width:8px;
+    background:#999;
+    border-radius:50%;
+    animation:wave 1s infinite alternate;
+}
+.wave:nth-child(2){
+    animation-delay:.2s;
+}
+.wave:nth-child(3){
+    animation-delay:.4s;
+}
+@keyframes wave{
+    0%,100%{
+        transform:scaleY(0.4);
+    }
+    50%{
+        transform:scaleY(1);
+    }
+}
+.status-indicator{
+    position:absolute;
+    bottom:10px;
+    left:10px;
+    display:flex;
+    align-items:center;
+    gap:5px;
+    font-size:10px;
+    opacity:0.7;
+    z-index:10003;
+}
+.status-dot{
+    width:6px;
+    height:6px;
+    border-radius:50%;
+}
+.status-dot.connected{
+    background:#10b981;
+    animation:pulse 2s infinite;
+}
+.status-dot.connecting{
+    background:#f59e0b;
+    animation:pulse 1s infinite;
+}
+.status-dot.disconnected{
+    background:#ef4444;
+}
+@keyframes pulse{
+    0%,100%{
+        opacity:1;
+    }
+    50%{
+        opacity:0.5;
+    }
+}
+@media(max-width:480px){
+    #aiBox{
+        width:95vw;
+        height:75vh;
+        border-radius:18px;
+        right: 10px;
+        bottom: 70px;
+    }
+    .bubble{
+        max-width:80%;
+    }
+}
+</style>
+</head>
+<body>
+<div id="aiWidget">
+ <div id="aiBubble" title="Open AI Assistant">
+    <img src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png" alt="AI Assistant" id="aiAvatar">
+ </div>
+ <div id="aiBox">
+  <div class="ai-header">
+   <h1>AI Support</h1>
+   <h3>SAMITECH CORPORATION</h3>
+   <span class="theme-toggle" id="themeToggle"><i class="fa fa-moon"></i></span>
+   <span class="close" id="closeBtn"><i class="fa fa-xmark"></i></span>
+  </div>
+  <div id="messages"></div>
+  <div class="ai-input">
+   <textarea id="input" rows="1" placeholder="Ask me anything..."></textarea>
+   <button id="sendBtn"><i class="fa fa-paper-plane"></i></button>
+  </div>
+  <div class="status-indicator">
+   <div id="statusDot" class="status-dot disconnected"></div>
+   <span id="statusText">Disconnected</span>
+  </div>
+ </div>
+</div>
+
+<script>
+// ============================
+// AI CHAT - VERCEL FIXED VERSION
+// ============================
+
+// Debug logging
+console.log('🚀 AI Chat Widget Loading...');
+
+// Global variables
+let open = false;
+let ws = null;
+let isProcessing = false;
+let typingEl = null;
+let currentChatId = 'chat_' + Date.now();
+let currentAIResponse = null;
+let responseComplete = true;
+let conversationHistory = [];
+
+// DOM elements - will be initialized after DOM loads
+let box, messages, input, sendBtn, statusDot, statusText, aiBubble, closeBtn, themeToggle;
+
+// Initialize everything when DOM is ready
+function initializeChat() {
+    console.log('🔄 Initializing AI Chat Widget...');
+    
+    // Get DOM elements
+    box = document.getElementById('aiBox');
+    messages = document.getElementById('messages');
+    input = document.getElementById('input');
+    sendBtn = document.getElementById('sendBtn');
+    statusDot = document.getElementById('statusDot');
+    statusText = document.getElementById('statusText');
+    aiBubble = document.getElementById('aiBubble');
+    closeBtn = document.getElementById('closeBtn');
+    themeToggle = document.getElementById('themeToggle');
+    
+    // Debug element existence
+    console.log('📋 Elements found:', {
+        box: !!box,
+        messages: !!messages,
+        input: !!input,
+        sendBtn: !!sendBtn,
+        statusDot: !!statusDot,
+        statusText: !!statusText,
+        aiBubble: !!aiBubble,
+        closeBtn: !!closeBtn,
+        themeToggle: !!themeToggle
+    });
+    
+    // Add initial welcome message
+    addMsg('ai', 'Hello! I\'m your AI Support Assistant from SAMITECH CORPORATION. How can I help you today?');
+    conversationHistory.push({
+        role: 'assistant',
+        content: 'Hello! I\'m your AI Support Assistant from SAMITECH CORPORATION. How can I help you today?'
+    });
+    
+    // Set up event listeners
+    setupEventListeners();
+    
+    console.log('✅ AI Chat Widget Initialized Successfully');
+}
+
+function setupEventListeners() {
+    console.log('🔗 Setting up event listeners...');
+    
+    // Bubble click - OPEN CHAT
+    if (aiBubble) {
+        aiBubble.addEventListener('click', function(e) {
+            console.log('🎯 Bubble clicked! Opening chat...');
+            e.stopPropagation();
+            openChat();
+        });
+        
+        // Add touch event for mobile
+        aiBubble.addEventListener('touchstart', function(e) {
+            console.log('📱 Touch event on bubble');
+            e.preventDefault();
+            openChat();
+        }, { passive: false });
+    } else {
+        console.error('❌ aiBubble element not found!');
+    }
+    
+    // Close button
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function(e) {
+            console.log('❌ Close button clicked');
+            e.stopPropagation();
+            closeChat();
+        });
+    }
+    
+    // Theme toggle
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleTheme();
+        });
+    }
+    
+    // Send button
+    if (sendBtn) {
+        sendBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            sendMsg();
+        });
+    }
+    
+    // Input enter key
+    if (input) {
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMsg();
+            }
+        });
+        
+        // Auto-resize
+        input.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+    }
+    
+    // Close chat when clicking outside
+    document.addEventListener('click', function(e) {
+        if (open && box && !box.contains(e.target) && aiBubble && !aiBubble.contains(e.target)) {
+            console.log('👆 Clicked outside, closing chat');
+            closeChat();
+        }
+    });
+    
+    // Prevent closing when clicking inside chat
+    if (box) {
+        box.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
+    
+    console.log('✅ Event listeners set up');
+}
+
+function openChat() {
+    console.log('📖 Opening chat...');
+    
+    if (open) {
+        console.log('⚠️ Chat already open');
+        return;
+    }
+    
+    open = true;
+    
+    // Show chat box with animation
+    if (box) {
+        box.classList.add('open');
+        console.log('✅ Chat box displayed');
+        
+        // Focus input after animation
+        setTimeout(() => {
+            if (input) {
+                input.focus();
+                console.log('🎯 Input focused');
+            }
+        }, 300);
+    } else {
+        console.error('❌ Chat box element not found!');
+    }
+    
+    // Connect WebSocket
+    connectWebSocket();
+    
+    console.log('🚪 Chat opened successfully');
+}
+
+function closeChat() {
+    console.log('📕 Closing chat...');
+    
+    if (!open) {
+        console.log('⚠️ Chat already closed');
+        return;
+    }
+    
+    open = false;
+    
+    // Hide chat box with animation
+    if (box) {
+        box.classList.remove('open');
+        
+        // Wait for animation then hide
+        setTimeout(() => {
+            if (box && !open) {
+                box.style.display = 'none';
+            }
+        }, 300);
+    }
+    
+    // Close WebSocket
+    if (ws) {
+        ws.close();
+        ws = null;
+        console.log('🔌 WebSocket closed');
+    }
+    
+    console.log('🚪 Chat closed successfully');
+}
+
+function toggleChat() {
+    console.log('🔄 Toggling chat state');
+    if (open) {
+        closeChat();
+    } else {
+        openChat();
+    }
+}
+
+function toggleTheme() {
+    document.body.classList.toggle('light');
+    const icon = themeToggle.querySelector('i');
+    if (icon) {
+        icon.className = document.body.classList.contains('light') ? 'fa fa-sun' : 'fa fa-moon';
+    }
+    console.log('🎨 Theme toggled');
+}
+
+function connectWebSocket() {
+    console.log('🔗 Connecting WebSocket...');
+    
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        console.log('✅ WebSocket already connected');
+        updateStatus('Connected', 'connected');
+        return;
+    }
+    
+    updateStatus('Connecting...', 'connecting');
+    
+    try {
+        ws = new WebSocket('wss://backend.buildpicoapps.com/api/chatbot/chat');
+        
+        ws.onopen = () => {
+            console.log('✅ WebSocket connected successfully');
+            updateStatus('Connected', 'connected');
+        };
+        
+        ws.onmessage = (event) => {
+            handleWebSocketMessage(event.data);
+        };
+        
+        ws.onclose = (event) => {
+            console.log('🔌 WebSocket closed');
+            updateStatus('Disconnected', 'disconnected');
+            ws = null;
+            
+            if (open) {
+                setTimeout(() => {
+                    connectWebSocket();
+                }, 3000);
+            }
+        };
+        
+        ws.onerror = (error) => {
+            console.error('❌ WebSocket error:', error);
+            updateStatus('Connection Error', 'disconnected');
+        };
+        
+    } catch (error) {
+        console.error('❌ Failed to create WebSocket:', error);
+        updateStatus('Failed to connect', 'disconnected');
+    }
+}
+
+function updateStatus(text, status) {
+    if (statusText && statusDot) {
+        statusText.textContent = text;
+        statusDot.className = 'status-dot ' + status;
+    }
+}
+
+function handleWebSocketMessage(data) {
+    if (!data || data.trim() === '') return;
+    
+    if (data === '[DONE]' || data === '[END]' || data === '[COMPLETE]') {
+        console.log('✅ Response complete');
+        responseComplete = true;
+        isProcessing = false;
+        hideTyping();
+        if (sendBtn) sendBtn.disabled = false;
+        return;
+    }
+    
+    try {
+        if (data.startsWith('{') || data.startsWith('[')) {
+            const jsonData = JSON.parse(data);
+            
+            if (jsonData.message || jsonData.response) {
+                const fullResponse = jsonData.message || jsonData.response;
+                hideTyping();
+                addMsg('ai', fullResponse);
+                
+                conversationHistory.push({
+                    role: 'assistant',
+                    content: fullResponse
+                });
+                
+                if (conversationHistory.length > 20) {
+                    conversationHistory = conversationHistory.slice(-20);
+                }
+                
+                responseComplete = true;
+                isProcessing = false;
+                if (sendBtn) sendBtn.disabled = false;
+                return;
+            }
+        }
+    } catch (e) {
+        // Not JSON
+    }
+    
+    if (responseComplete) {
+        responseComplete = false;
+        hideTyping();
+        currentAIResponse = addMsg('ai', data);
+    } else {
+        if (currentAIResponse) {
+            const bubble = currentAIResponse.querySelector('.bubble');
+            const currentText = bubble.innerText || bubble.textContent;
+            bubble.innerHTML = formatText(currentText + data);
+            messages.scrollTop = messages.scrollHeight;
+        }
+    }
+    
+    const trimmedData = data.trim();
+    if (trimmedData.endsWith('.') || trimmedData.endsWith('?') || trimmedData.endsWith('!')) {
+        clearTimeout(window.responseCompleteTimer);
+        window.responseCompleteTimer = setTimeout(() => {
+            if (!responseComplete && currentAIResponse) {
+                const fullResponse = currentAIResponse.querySelector('.bubble').innerText;
+                conversationHistory.push({
+                    role: 'assistant',
+                    content: fullResponse
+                });
+                
+                if (conversationHistory.length > 20) {
+                    conversationHistory = conversationHistory.slice(-20);
+                }
+                
+                responseComplete = true;
+                isProcessing = false;
+                hideTyping();
+                if (sendBtn) sendBtn.disabled = false;
+            }
+        }, 1500);
+    }
+}
+
+function sendMsg() {
+    const text = input.value.trim();
+    if (!text || isProcessing || !input) return;
+    
+    responseComplete = true;
+    currentAIResponse = null;
+    
+    addMsg('user', text);
+    input.value = '';
+    input.style.height = 'auto';
+    
+    conversationHistory.push({
+        role: 'user',
+        content: text
+    });
+    
+    if (conversationHistory.length > 20) {
+        conversationHistory = conversationHistory.slice(-20);
+    }
+    
+    isProcessing = true;
+    if (sendBtn) sendBtn.disabled = true;
+    
+    showTyping();
+    
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+        console.log('🔌 WebSocket not ready');
+        connectWebSocket();
+        
+        setTimeout(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                sendMessageToAI(text);
+            } else {
+                hideTyping();
+                addMsg('ai', "I'm connecting... Please wait a moment.");
+                isProcessing = false;
+                if (sendBtn) sendBtn.disabled = false;
+            }
+        }, 1500);
+    } else {
+        sendMessageToAI(text);
+    }
+}
+
+function sendMessageToAI(text) {
+    try {
+        let conversationContext = "";
+        conversationHistory.forEach((msg) => {
+            const role = msg.role === 'user' ? 'User' : 'Assistant';
+            conversationContext += `${role}: ${msg.content}\n\n`;
+        });
+        
+        const systemPrompt = `You are AI Support from SAMITECH CORPORATION. Remember our conversation and provide helpful responses.
+
+Conversation History:
+${conversationContext}
+
+User: ${text}
+
+Assistant:`;
+        
+        const payload = {
+            chatId: currentChatId,
+            appId: 'word-almost',
+            systemPrompt: systemPrompt,
+            message: text,
+            stream: true
+        };
+        
+        console.log('📤 Sending message to AI');
+        ws.send(JSON.stringify(payload));
+        
+        clearTimeout(window.responseTimeout);
+        window.responseTimeout = setTimeout(() => {
+            if (isProcessing) {
+                console.log('⏰ Response timeout');
+                hideTyping();
+                isProcessing = false;
+                responseComplete = true;
+                if (sendBtn) sendBtn.disabled = false;
+            }
+        }, 25000);
+        
+    } catch (error) {
+        console.error('❌ Error sending message:', error);
+        hideTyping();
+        addMsg('ai', "Sorry, I encountered an error. Please try again.");
+        isProcessing = false;
+        if (sendBtn) sendBtn.disabled = false;
+    }
+}
+
+function addMsg(type, text) {
+    if (!messages) return null;
+    
+    const div = document.createElement('div');
+    div.className = 'msg ' + type;
+    
+    const avatarSrc = type === 'ai' 
+        ? 'https://cdn-icons-png.flaticon.com/512/4712/4712109.png'
+        : 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
+    
+    const time = new Date().toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    const formattedText = formatText(text);
+    
+    div.innerHTML = `
+        ${type === 'ai' ? `<img class="avatar" src="${avatarSrc}" alt="AI">` : ''}
+        <div class="msg-content">
+            <div class="bubble">${formattedText}</div>
+            <div class="msg-tools">
+                <span onclick="copyMsg(this)"><i class="fa fa-copy"></i></span>
+                <span onclick="editMsg(this)"><i class="fa fa-pen"></i></span>
+                <span onclick="deleteMsg(this)"><i class="fa fa-trash"></i></span>
+                <span onclick="shareMsg(this)"><i class="fa fa-share-nodes"></i></span>
+                <span style="margin-left:5px;font-size:10px;color:#888;">${time}</span>
+            </div>
+        </div>
+        ${type === 'user' ? `<img class="avatar" src="${avatarSrc}" alt="User">` : ''}
+    `;
+    
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+    
+    if (type === 'ai') {
+        currentAIResponse = div;
+    }
+    
+    return div;
+}
+
+function formatText(text) {
+    if (!text) return '';
+    return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\n/g, '<br>');
+}
+
+function showTyping() {
+    hideTyping();
+    
+    if (!messages) return;
+    
+    typingEl = document.createElement('div');
+    typingEl.className = 'msg ai';
+    typingEl.id = 'typingIndicator';
+    typingEl.innerHTML = `
+        <img class="avatar" src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png" alt="AI">
+        <div class="msg-content">
+            <div class="bubble">
+                <div class="typing">
+                    <div class="wave"></div>
+                    <div class="wave"></div>
+                    <div class="wave"></div>
+                </div>
+            </div>
+        </div>
+    `;
+    messages.appendChild(typingEl);
+    messages.scrollTop = messages.scrollHeight;
+}
+
+function hideTyping() {
+    const typing = document.getElementById('typingIndicator');
+    if (typing) {
+        typing.remove();
+    }
+    typingEl = null;
+}
+
+function copyMsg(el) {
+    const text = el.closest('.msg').querySelector('.bubble').innerText;
+    navigator.clipboard.writeText(text);
+    const original = el.innerHTML;
+    el.innerHTML = '<i class="fa fa-check"></i>';
+    setTimeout(() => el.innerHTML = original, 1000);
+}
+
+function editMsg(el) {
+    const bubble = el.closest('.msg').querySelector('.bubble');
+    const text = bubble.innerText;
+    const newText = prompt('Edit message:', text);
+    if (newText !== null) bubble.innerHTML = formatText(newText);
+}
+
+function deleteMsg(el) {
+    if (confirm('Delete message?')) el.closest('.msg').remove();
+}
+
+function shareMsg(el) {
+    const text = el.closest('.msg').querySelector('.bubble').innerText;
+    if (navigator.share) {
+        navigator.share({ title: 'AI Message', text: text });
+    } else {
+        navigator.clipboard.writeText(text);
+        alert('Copied to clipboard!');
+    }
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', initializeChat);
+
+// Also try to initialize after a short delay as fallback
+setTimeout(() => {
+    if (!box) {
+        console.log('🔄 Retrying initialization...');
+        initializeChat();
+    }
+}, 1000);
+
+// Add manual test function to window
+window.testAIChat = function() {
+    console.log('🧪 Testing AI Chat...');
+    if (!open) {
+        openChat();
+        setTimeout(() => {
+            input.value = "Hello, is this working?";
+            sendMsg();
+        }, 1000);
+    } else {
+        input.value = "Test message";
+        sendMsg();
+    }
+};
+
+console.log('🎯 AI Chat Script Loaded - Ready for Vercel Deployment!');
+</script>
+</body>
+</html>
